@@ -2,19 +2,27 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const connection = require("./db");
 const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
 const jobRoutes = require("./routes/jobs");
 
-// database connection
+// Database connection
 connection();
 
-// middlewares
-app.use(express.json());
-app.use(cors());
+// Middlewares
+app.use(express.json({ limit: "10mb" }));
+app.use(cookieParser());
+app.use(
+    cors({
+        origin: "http://localhost:3000",
+        credentials: true,
+    })
+);
+app.use("/uploads", express.static("uploads")); // Serve uploaded files
 
-// routes
+// Routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);

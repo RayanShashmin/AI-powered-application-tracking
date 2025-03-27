@@ -1,28 +1,71 @@
-// app/hooks/useAuth.js
 "use client";
 
 import { useState, useEffect } from "react";
+import axios from "axios";
 
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Add a loading state
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  // Check authentication status on component mount
+  const checkAuth = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/check`,
+        { withCredentials: true }
+      );
+      setIsAuthenticated(true);
+      setUser(response.data.user);
+    } catch (error) {
+      setIsAuthenticated(false);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const login = async (email, password) => {
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth`,
+        { email, password },
+        { withCredentials: true }
+      );
+      // After successful login, immediately update state
+      const checkResponse = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/check`,
+        { withCredentials: true }
+      );
+      setIsAuthenticated(true);
+      setUser(checkResponse.data.user);
+      return true; // Indicate success
+    } catch (error) {
+      setIsAuthenticated(false);
+      setUser(null);
+      throw new Error(
+        error.response?.data?.message || "Invalid email or password"
+      );
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/logout`,
+        {},
+        { withCredentials: true }
+      );
+      setIsAuthenticated(false);
+      setUser(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  // Check auth status on mount
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token); // Set authentication status based on token
-    setIsLoading(false); // Set loading to false after checking
+    checkAuth();
   }, []);
 
-  const login = (token) => {
-    localStorage.setItem("token", token); // Store the token in localStorage
-    setIsAuthenticated(true); // Update authentication state
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    setIsAuthenticated(false); // Update authentication state
-  };
-
-  return { isAuthenticated, isLoading, login, logout };
+  return { isAuthenticated, isLoading, user, login, logout, checkAuth };
 };

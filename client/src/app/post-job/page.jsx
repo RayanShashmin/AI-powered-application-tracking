@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PostJob() {
   const [fullName, setFullName] = useState("");
@@ -13,6 +14,9 @@ export default function PostJob() {
   const [jobDescription, setJobDescription] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [shortJobDescription, setShortJobDescription] = useState("");
+  const [photoFile, setPhotoFile] = useState(null); // Store the file object
+  const [photoPreview, setPhotoPreview] = useState(null); // For preview
+  const router = useRouter();
 
   const handleGetStartedClick = () => {
     const formSection = document.getElementById("form-section");
@@ -21,49 +25,58 @@ export default function PostJob() {
     }
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert("Photo size exceeds 5MB limit. Please upload a smaller image.");
+        return;
+      }
+      setPhotoFile(file); // Store the file object
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result); // Set preview
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const jobData = {
-      fullName,
-      hiringManagerEmail,
-      jobPostTitle,
-      jobDepartment,
-      jobLocation,
-      jobType,
-      jobSalary,
-      jobDescription,
-      companyName,
-      shortJobDescription,
-    };
+    const formData = new FormData();
+    formData.append("fullName", fullName);
+    formData.append("hiringManagerEmail", hiringManagerEmail);
+    formData.append("jobPostTitle", jobPostTitle);
+    formData.append("jobDepartment", jobDepartment);
+    formData.append("jobLocation", jobLocation);
+    formData.append("jobType", jobType);
+    formData.append("jobSalary", jobSalary);
+    formData.append("jobDescription", jobDescription);
+    formData.append("companyName", companyName);
+    formData.append("shortJobDescription", shortJobDescription);
+    if (photoFile) formData.append("photo", photoFile);
 
     try {
-      const response = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jobData),
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/jobs`;
+      console.log("Posting to:", url);
+
+      const response = await fetch(url, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
       });
+
+      const responseData = await response.json();
       if (response.ok) {
-        alert('Job posted successfully!');
-        // Reset form or redirect
-        setFullName("");
-        setHiringManagerEmail("");
-        setJobPostTitle("");
-        setJobDepartment("");
-        setJobLocation("");
-        setJobType("");
-        setJobSalary("");
-        setJobDescription("");
-        setCompanyName("");
-        setShortJobDescription("");
+        alert("Job posted successfully!");
+        router.push("/");
       } else {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.message}`);
+        console.error("Response error:", responseData);
+        alert(`Error: ${responseData.message || "Unknown error"}`);
       }
     } catch (error) {
-      console.error('Error posting job:', error);
-      alert('An error occurred while posting the job.');
+      console.error("Fetch error:", error);
+      alert("An error occurred while posting the job. Check the console for details.");
     }
   };
 
@@ -74,7 +87,7 @@ export default function PostJob() {
         <h2 className="text-lg font-semibold text-indigo-600">Subheader</h2>
         <h1 className="text-4xl font-bold text-gray-900 my-4">Post a job here!</h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique. Duis cursus, mi quis viverra ornare, eros dolor interdum nulla, ut commodo diam libero vitae erat.
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse varius enim in eros elementum tristique.
         </p>
         <button
           onClick={handleGetStartedClick}
@@ -102,7 +115,6 @@ export default function PostJob() {
           </p>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* User Information */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700">Your Full Name</label>
               <input
@@ -127,7 +139,6 @@ export default function PostJob() {
               />
             </div>
 
-            {/* Job Details */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700">Job Post Title *</label>
               <input
@@ -205,7 +216,6 @@ export default function PostJob() {
               />
             </div>
 
-            {/* Company Information */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700">Company Name *</label>
               <input
@@ -230,7 +240,19 @@ export default function PostJob() {
               />
             </div>
 
-            {/* Submit Button */}
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Company Photo</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700"
+              />
+              {photoPreview && (
+                <img src={photoPreview} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded-md" />
+              )}
+            </div>
+
             <div>
               <button
                 type="submit"

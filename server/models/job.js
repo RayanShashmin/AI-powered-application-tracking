@@ -12,6 +12,7 @@ const jobSchema = new mongoose.Schema({
   jobDescription: { type: String, required: true },
   companyName: { type: String, required: true },
   shortJobDescription: { type: String, required: true },
+  photo: { type: String }, // Store base64 string of the image
 });
 
 const Job = mongoose.model("Job", jobSchema);
@@ -28,6 +29,7 @@ const validateJob = (data) => {
     jobDescription: Joi.string().required().label("Job Description"),
     companyName: Joi.string().required().label("Company Name"),
     shortJobDescription: Joi.string().required().label("Short Job Description"),
+    photo: Joi.string().allow("").optional().label("Photo"), // Optional photo field
   });
   return schema.validate(data);
 };
