@@ -14,8 +14,10 @@ export default function PostJob() {
   const [jobDescription, setJobDescription] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [shortJobDescription, setShortJobDescription] = useState("");
-  const [photoFile, setPhotoFile] = useState(null); // Store the file object
-  const [photoPreview, setPhotoPreview] = useState(null); // For preview
+  const [postDate, setPostDate] = useState("");
+  const [deadlineDate, setDeadlineDate] = useState("");
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const router = useRouter();
 
   const handleGetStartedClick = () => {
@@ -28,14 +30,14 @@ export default function PostJob() {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         alert("Photo size exceeds 5MB limit. Please upload a smaller image.");
         return;
       }
-      setPhotoFile(file); // Store the file object
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result); // Set preview
+        setPhotoPreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -43,40 +45,47 @@ export default function PostJob() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Format dates properly (important change here)
+    const formattedData = {
+      fullName,
+      hiringManagerEmail,
+      jobPostTitle,
+      jobDepartment,
+      jobLocation,
+      jobType,
+      jobSalary,
+      jobDescription,
+      companyName,
+      shortJobDescription,
+      postDate: postDate || new Date().toISOString(), // Use current date if not provided
+      deadlineDate: deadlineDate, // This will be sent as-is (YYYY-MM-DD format)
+    };
+  
     const formData = new FormData();
-    formData.append("fullName", fullName);
-    formData.append("hiringManagerEmail", hiringManagerEmail);
-    formData.append("jobPostTitle", jobPostTitle);
-    formData.append("jobDepartment", jobDepartment);
-    formData.append("jobLocation", jobLocation);
-    formData.append("jobType", jobType);
-    formData.append("jobSalary", jobSalary);
-    formData.append("jobDescription", jobDescription);
-    formData.append("companyName", companyName);
-    formData.append("shortJobDescription", shortJobDescription);
+    // Append all fields
+    Object.entries(formattedData).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
     if (photoFile) formData.append("photo", photoFile);
-
+  
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/jobs`;
-      console.log("Posting to:", url);
-
-      const response = await fetch(url, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/jobs`, {
         method: "POST",
         body: formData,
         credentials: "include",
       });
-
-      const responseData = await response.json();
-      if (response.ok) {
-        alert("Job posted successfully!");
-        router.push("/");
-      } else {
-        console.error("Response error:", responseData);
-        alert(`Error: ${responseData.message || "Unknown error"}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to post job");
       }
+      
+      alert("Job posted successfully!");
+      router.push("/");
     } catch (error) {
-      console.error("Fetch error:", error);
-      alert("An error occurred while posting the job. Check the console for details.");
+      console.error("Submission error:", error);
+      alert(`Error: ${error.message}`);
     }
   };
 
@@ -122,7 +131,7 @@ export default function PostJob() {
                 placeholder="John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
                 required
               />
             </div>
@@ -134,7 +143,7 @@ export default function PostJob() {
                 placeholder="johndoe@email.com"
                 value={hiringManagerEmail}
                 onChange={(e) => setHiringManagerEmail(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
                 required
               />
             </div>
@@ -146,7 +155,7 @@ export default function PostJob() {
                 placeholder="Enter your job title"
                 value={jobPostTitle}
                 onChange={(e) => setJobPostTitle(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
                 required
               />
             </div>
@@ -159,7 +168,7 @@ export default function PostJob() {
                   placeholder="Development"
                   value={jobDepartment}
                   onChange={(e) => setJobDepartment(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
                   required
                 />
               </div>
@@ -171,7 +180,7 @@ export default function PostJob() {
                   placeholder="New York"
                   value={jobLocation}
                   onChange={(e) => setJobLocation(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
                   required
                 />
               </div>
@@ -183,9 +192,10 @@ export default function PostJob() {
                 <select
                   value={jobType}
                   onChange={(e) => setJobType(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
                   required
                 >
+                  <option value="">Select job type</option>
                   <option value="Remote">Remote</option>
                   <option value="On-site">On-site</option>
                   <option value="Hybrid">Hybrid</option>
@@ -199,7 +209,33 @@ export default function PostJob() {
                   placeholder="Salary"
                   value={jobSalary}
                   onChange={(e) => setJobSalary(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
+                />
+              </div>
+            </div>
+
+            {/* New Date Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Post Date *</label>
+                <input
+                  type="date"
+                  value={postDate}
+                  onChange={(e) => setPostDate(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Application Deadline *</label>
+                <input
+                  type="date"
+                  value={deadlineDate}
+                  onChange={(e) => setDeadlineDate(e.target.value)}
+                  min={postDate} // Ensure deadline is after post date
+                  className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
+                  required
                 />
               </div>
             </div>
@@ -210,7 +246,7 @@ export default function PostJob() {
                 placeholder="Provide a detailed description of the job..."
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
                 rows="4"
                 required
               />
@@ -223,7 +259,7 @@ export default function PostJob() {
                 placeholder="Your company name"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
                 required
               />
             </div>
@@ -234,7 +270,7 @@ export default function PostJob() {
                 placeholder="Explain the job you're hiring for in just a few sentences."
                 value={shortJobDescription}
                 onChange={(e) => setShortJobDescription(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:ring-2 focus:ring-[#693cf0] focus:border-[#693cf0] transition-all"
+                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
                 rows="3"
                 required
               />
@@ -246,7 +282,7 @@ export default function PostJob() {
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoChange}
-                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700"
+                className="w-full p-3 border border-gray-300 rounded-md text-sm text-gray-700 focus:border-2 focus:border-blue-600 transition-all outline-none"
               />
               {photoPreview && (
                 <img src={photoPreview} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded-md" />
@@ -256,7 +292,7 @@ export default function PostJob() {
             <div>
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-3 rounded-md text-sm font-semibold hover:bg-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
+                className="w-full bg-blue-600 text-white py-3 rounded-md text-sm font-semibold hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
               >
                 Post Job
               </button>

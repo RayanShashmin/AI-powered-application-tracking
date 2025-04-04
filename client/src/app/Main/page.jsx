@@ -68,3 +68,27 @@
 // };
 
 // export default Main;
+
+import React, { useEffect } from 'react'
+
+function App(){
+    const[count,setcount] = useEffect(0)
+}
+const decrementFunction = () => {
+    setcount(count - 1)
+}
+const incrementFunction = () => {
+    setcount(count + 1)
+}
+
+
+export default function page() {
+  return (
+    <div>
+        <p>Counter</p>
+        <button  onClick={incrementFunction}>+</button>
+        <button onClick={decrementFunction}>-</button>
+        <p>{count}</p>
+    </div>
+  )
+}

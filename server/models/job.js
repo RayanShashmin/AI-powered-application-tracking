@@ -12,8 +12,10 @@ const jobSchema = new mongoose.Schema({
   jobDescription: { type: String, required: true },
   companyName: { type: String, required: true },
   shortJobDescription: { type: String, required: true },
+  postDate: { type: Date, required: true }, // Added postDate
+  deadlineDate: { type: Date, required: true }, // Added deadlineDate
   photo: { type: String }, // Store base64 string of the image
-});
+}, { timestamps: true }); // Added timestamps for created/updated dates
 
 const Job = mongoose.model("Job", jobSchema);
 
@@ -29,7 +31,9 @@ const validateJob = (data) => {
     jobDescription: Joi.string().required().label("Job Description"),
     companyName: Joi.string().required().label("Company Name"),
     shortJobDescription: Joi.string().required().label("Short Job Description"),
-    photo: Joi.string().allow("").optional().label("Photo"), // Optional photo field
+    postDate: Joi.date().required().label("Post Date"), // Added validation
+    deadlineDate: Joi.date().required().min(Joi.ref('postDate')).label("Deadline Date"), // Added validation
+    photo: Joi.string().allow("").optional().label("Photo"),
   });
   return schema.validate(data);
 };
